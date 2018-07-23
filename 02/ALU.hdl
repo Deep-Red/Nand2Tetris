@@ -42,29 +42,29 @@ CHIP ALU {
         ng; // 1 if (out < 0),  0 otherwise
 
     PARTS:
-      // Set inverse of zero x and zero y for later use
-      Not(in=zx,out=izx);
-      Not(in=zy,out=izy);
       // Conditionally zero x and y
-      And16(a=x,b[0]=izx,b[1]=izx,b[2]=izx,b[3]=izx,b[4]=izx,b[5]=izx,b[6]=izx,b[7]=izx,b[8]=izx,b[9]=izx,b[10]=izx,b[11]=izx,b[12]=izx,b[13]=izx,b[14]=izx,b[15]=izx,out=zmx);
-      And16(a=y,b[0]=izx,b[1]=izy,b[2]=izy,b[3]=izy,b[4]=izy,b[5]=izy,b[6]=izy,b[7]=izy,b[8]=izy,b[9]=izy,b[10]=izy,b[11]=izy,b[12]=izy,b[13]=izy,b[14]=izy,b[15]=izy,out=zmy);
+      Mux16(a=x,b[0..15]=false,sel=zx,out=mx1);
+      Mux16(a=y,b[0..15]=false,sel=zy,out=my1);
       // Find inverse of x and y
-      Not16(in=zmx,out=izmx);
-      Not16(in=zmy,out=izmy);
+      Not16(in=mx1,out=imx1);
+      Not16(in=my1,out=imy1);
       // Choose between inverted and non-inverted values of x and y to carry forward
-      // It really seems like an Xor16 would simplify this and the previous step...
-      Mux16(a=zmx,b=izmx,sel=nx,out=nmx);
-      Mux16(a=zmy,b=izmy,sel=ny,out=nmy);
+      Mux16(a=mx1,b=imx1,sel=nx,out=mx2);
+      Mux16(a=my1,b=imy1,sel=ny,out=my2);
       // Add the two numbers
-      Add16(a=nmx,b=nmy,out=sm);
+      Add16(a=mx2,b=my2,out=sm);
       // And the two numbers
-      And16(a=nmx,b=nmy,out=am);
+      And16(a=mx2,b=my2,out=am);
       // Chose between added or anded values above based on f
-      Mux16(a=sm,b=am,sel=f,out=r);
-      // Conditionally negate the output
-      // Once again I feel like an Xor16 would make this easier
-      // Which means I'm probably misunderstanding something about this...
-      Not16(in=r,out=nr);
-      Mux16(a=r,b=nr,sel=f,out=out);
+      Mux16(a=am,b=sm,sel=f,out=ir);
+      // Conditionally negate the output, set ng, and split output
+      // into halves for determining zr
+      Not16(in=ir,out=nir);
+      Mux16(a=ir,b=nir,sel=no,out=res,out=out,out[0..7]=resh1,out[8..15]=resh2,out[15]=ng);
+      // Set zr
+      Or8Way(in=resh1,out=zrp1);
+      Or8Way(in=resh2,out=zrp2);
+      Or(a=zrp1,b=zrp2,out=izr);
+      Not(in=izr,out=zr);
 
 }
