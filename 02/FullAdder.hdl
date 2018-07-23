@@ -13,5 +13,14 @@ CHIP FullAdder {
         carry;   // Left bit of a + b + c
 
     PARTS:
-    // Put you code here:
+    Xor(a=a,b=b,out=xab);
+    Xor(a=xab,b=c,out=xabc);
+    And(a=a,b=b,out=aab);
+    And(a=aab,b=c,out=aabc);
+    Or(a=xabc,b=aabc,out=sum);
+
+    And(a=a,b=c,out=aac);
+    And(a=b,b=c,out=abc);
+    Or(a=aab,b=aac,out=o1);
+    Or(a=abc,b=o1,out=carry);
 }

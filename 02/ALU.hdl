@@ -7,7 +7,7 @@
  * The ALU (Arithmetic Logic Unit).
  * Computes one of the following functions:
  * x+y, x-y, y-x, 0, 1, -1, x, y, -x, -y, !x, !y,
- * x+1, y+1, x-1, y-1, x&y, x|y on two 16-bit inputs, 
+ * x+1, y+1, x-1, y-1, x&y, x|y on two 16-bit inputs,
  * according to 6 input bits denoted zx,nx,zy,ny,f,no.
  * In addition, the ALU computes two 1-bit outputs:
  * if the ALU output == 0, zr is set to 1; otherwise zr is set to 0;
@@ -27,8 +27,8 @@
 // if (out < 0) set ng = 1
 
 CHIP ALU {
-    IN  
-        x[16], y[16],  // 16-bit inputs        
+    IN
+        x[16], y[16],  // 16-bit inputs
         zx, // zero the x input?
         nx, // negate the x input?
         zy, // zero the y input?
@@ -36,11 +36,35 @@ CHIP ALU {
         f,  // compute out = x + y (if 1) or x & y (if 0)
         no; // negate the out output?
 
-    OUT 
+    OUT
         out[16], // 16-bit output
         zr, // 1 if (out == 0), 0 otherwise
         ng; // 1 if (out < 0),  0 otherwise
 
     PARTS:
-   // Put you code here:
+      // Set inverse of zero x and zero y for later use
+      Not(in=zx,out=izx);
+      Not(in=zy,out=izy);
+      // Conditionally zero x and y
+      And16(a=x,b[0]=izx,b[1]=izx,b[2]=izx,b[3]=izx,b[4]=izx,b[5]=izx,b[6]=izx,b[7]=izx,b[8]=izx,b[9]=izx,b[10]=izx,b[11]=izx,b[12]=izx,b[13]=izx,b[14]=izx,b[15]=izx,out=zmx);
+      And16(a=y,b[0]=izx,b[1]=izy,b[2]=izy,b[3]=izy,b[4]=izy,b[5]=izy,b[6]=izy,b[7]=izy,b[8]=izy,b[9]=izy,b[10]=izy,b[11]=izy,b[12]=izy,b[13]=izy,b[14]=izy,b[15]=izy,out=zmy);
+      // Find inverse of x and y
+      Not16(in=zmx,out=izmx);
+      Not16(in=zmy,out=izmy);
+      // Choose between inverted and non-inverted values of x and y to carry forward
+      // It really seems like an Xor16 would simplify this and the previous step...
+      Mux16(a=zmx,b=izmx,sel=nx,out=nmx);
+      Mux16(a=zmy,b=izmy,sel=ny,out=nmy);
+      // Add the two numbers
+      Add16(a=nmx,b=nmy,out=sm);
+      // And the two numbers
+      And16(a=nmx,b=nmy,out=am);
+      // Chose between added or anded values above based on f
+      Mux16(a=sm,b=am,sel=f,out=r);
+      // Conditionally negate the output
+      // Once again I feel like an Xor16 would make this easier
+      // Which means I'm probably misunderstanding something about this...
+      Not16(in=r,out=nr);
+      Mux16(a=r,b=nr,sel=f,out=out);
+
 }
