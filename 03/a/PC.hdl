@@ -16,10 +16,9 @@ CHIP PC {
     OUT out[16];
 
     PARTS:
-    Bit(in=inc,load=true,out=increment);
-    Mux16(a=prev,b=in,sel=load,out=val1);
-    Or(a=load,b=inc,out=update);
-    Register(in=val1,load=update,out=rval);
-    Inc16(in=rval,out=irval);
-    Mux16(a=rval,b=irval,sel=increment,out=prev,out=out);
+    Inc16(in=rval,out=incremented);
+    Mux16(a=rval,b=incremented,sel=inc,out=iv);
+    Mux16(a=iv,b=in,sel=load,out=lv);
+    Mux16(a=lv,b=false,sel=reset,out=zv);
+    Register(in=zv,load=true,out=rval,out=out);
 }
