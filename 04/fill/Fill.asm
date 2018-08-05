@@ -12,31 +12,49 @@
 // the screen should remain fully clear as long as no key is pressed.
 
 (BEGIN)
-@SCREEN
-D=A
-@R2
-M=D
-@KEYBOARD
-D=M
-@R3
-M=D
-(LOOP)
- @R2
+  @SCREEN
+  D=A
+  @R2
+  M=D
+
+(CHECK)
+  @KBD
+  D=M
+  @CLEAR
+  D;JEQ
+  @FILL
+  D;JGT
+  @CHECK
+  0;JMP
+
+(FILL)
+ @R3
+ M=-1
+ @UPDATE
+ 0;JMP
+
+(CLEAR)
+ @R3
+ M=0
+ @UPDATE
+ 0;JMP
+
+(UPDATE)
+ @R3
  D=M
- @CLEAR
- M;JEQ
- A=-1
- M=M+1
- @LOOP
- D;JNE
- @BEGIN
- D;JEQ
- (CLEAR)
  @R2
- A=0
+ A=M
+ M=D
+ @R2
+ D=M+1
+ @KBD
+ D=A-D
+ @R2
  M=M+1
- @LOOP
- D;JEQ
- @BEGIN
- D;JNE
-(END)
+ A=M
+
+@UPDATE
+D;JGT
+
+@BEGIN
+0;JMP
