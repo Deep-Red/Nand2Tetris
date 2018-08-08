@@ -40,8 +40,9 @@ CHIP CPU {
 
     PARTS:
     //Decode instruction: load values
-    And(a=instruction[5],instruction[15],out=loada);
-    And(a=instruction[4],instruction[15],out=loadd);
+    And(a=instruction[5],b=instruction[15],out=loada); //writeM should probably be a factor here too.
+    And(a=instruction[4],b=instruction[15],out=loadd);
+
     //Decode instruction: jump cond
     //Jump < 0, Jump == 0, Jump <= 0
     And(a=instruction[2],b=ng,out=jlt);
@@ -50,19 +51,19 @@ CHIP CPU {
     //Jump > 0
     Not(in=ng,out=ing);
     Not(in=zr,out=izr);
-    And(a=ing,b=ijzr,out=pos);
+    And(a=ing,b=izr,out=pos);
     And(a=instruction[0],b=pos,out=jgt);
     //Jump ?
     Or(a=jle,b=jgt,out=jmp);
 
 
 
-
+    //Main cpu implementation
     Mux16(a=instruction,b=aluout,sel=instruction[12],out=m1out);
     ARegister(in=m1out,load=loada,out=arout);
     PC(in=arout,load=jmp,inc=instruction[15],reset=reset,out=pcout);
     Mux16(a=m1out,b=inM,sel=instruction[12],out=m2out);
     DRegister(in=aluout,load=loadd,out=drout);
-    ALU(x=m2out,y=drout,nx=,zy=,ny=,f=,no=,out=aluout,zr=zr,ng=ng);
+    ALU(x=m2out,y=drout,zx=instruction[11],nx=instruction[10],zy=instruction[9],ny=instruction[8],f=instruction[7],no=instruction[6],out=aluout,out=outM,zr=zr,ng=ng);
 
 }
