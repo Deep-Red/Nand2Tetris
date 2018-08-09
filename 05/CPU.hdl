@@ -44,15 +44,16 @@ CHIP CPU {
     Not(in=instruction[15],out=Ainst);                  //A
     Or(a=Ainst,b=toa,out=loada);                        //A
     And(a=instruction[4],b=instruction[15],out=loadd);  //D
-    And(a=inM[15],b=instruction[3],out=loadm);          //M; this may not actually belong in this group.
 
     //Decode instruction: writeM
     And(a=instruction[15],b=instruction[3],out=writeM); //M
 
     //Decode instruction: jump cond
-    //Jump < 0, Jump == 0, Jump <= 0
+    //Jump < 0
     And(a=instruction[2],b=ng,out=jlt);
+    // Jump == 0
     And(a=instruction[1],b=zr,out=jeq);
+    // Jump <= 0
     Or(a=jlt,b=jeq,out=jle);
     //Jump > 0
     Not(in=ng,out=ing);
@@ -63,19 +64,17 @@ CHIP CPU {
     Or(a=jle,b=jgt,out=jmpifc);
     And(a=instruction[15],b=jmpifc,out=jmp);
 
-    //Decode instruction PCinc
-    Not(in=jmp,out=ijmp);
-
+    //Registers
     //Set A
     Mux16(a=aluout,b=instruction,sel=Ainst,out=m1out);
     ARegister(in=m1out,load=loada,out=arout,out[0..14]=addressM);
-
     //Set D
-    //Mux16(a=arout,b=aluout,sel=loadd,out=m2out);
     DRegister(in=aluout,load=loadd,out=drout);
 
-    //Main cpu implementation
+    //Select A register or Memory address for input to alu
     Mux16(a=arout,b=inM,sel=instruction[12],out=aorm);
+
+    //Main ALU and PC implementation
     ALU(x=drout,y=aorm,zx=instruction[11],nx=instruction[10],zy=instruction[9],ny=instruction[8],f=instruction[7],no=instruction[6],out=aluout,out=outM,zr=zr,ng=ng);
     PC(in=arout,load=jmp,inc=true,reset=reset,out[0..14]=pc);
 
