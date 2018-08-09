@@ -45,6 +45,9 @@ CHIP CPU {
     Or(a=Ainst,b=toa,out=loada);
     And(a=instruction[4],b=instruction[13],out=loadd);
 
+    //Decode instruction: write M
+    And(a=instruction[15],b=instruction[3],out=writeM);
+
     //Decode instruction: jump cond
     //Jump < 0, Jump == 0, Jump <= 0
     And(a=instruction[2],b=ng,out=jlt);
@@ -67,11 +70,11 @@ CHIP CPU {
     Mux16(a=inM,b=instruction,sel=loada,out=m1out);
     ARegister(in=m1out,load=loada,out=arout,out[0..14]=addressM);
 
-    Mux16(a=aluout,b=arout,sel=loadd,out=m2out);
+    Mux16(a=arout,b=aluout,sel=loadd,out=m2out);
     DRegister(in=m2out,load=loadd,out=drout);
 
-    Mux16(a=inM,b=arout,sel=instruction[12],out=aorm);
-    ALU(x=drout,y=aorm,zx=inM[11],nx=inM[10],zy=inM[9],ny=inM[8],f=inM[7],no=inM[6],out=aluout,out=outM,zr=zr,ng=ng);
+    Mux16(a=arout,b=inM,sel=instruction[12],out=aorm);
+    ALU(x=drout,y=aorm,zx=instruction[11],nx=instruction[10],zy=instruction[9],ny=instruction[8],f=instruction[7],no=instruction[6],out=aluout,out=outM,zr=zr,ng=ng);
     PC(in=arout,load=jmp,inc=pci,reset=reset,out[0..14]=pc);
 
 }
