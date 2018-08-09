@@ -59,10 +59,12 @@ CHIP CPU {
     And(a=ing,b=izr,out=pos);
     And(a=instruction[0],b=pos,out=jgt);
     //Jump ?
-    Or(a=jle,b=jgt,out=jmp);
+    Or(a=jle,b=jgt,out=jmpifc);
+    And(a=instruction[15],b=jmpifc,out=jmp);
 
     //Decode instruction PCinc
-    Nand(a=instruction[15],b=jmp,out=pci);
+    Not(in=jmp,out=ijmp);
+    //Or(a=Ainst,b=ijmp,out=pci);
 
 
 
@@ -75,6 +77,6 @@ CHIP CPU {
 
     Mux16(a=arout,b=inM,sel=instruction[12],out=aorm);
     ALU(x=drout,y=aorm,zx=instruction[11],nx=instruction[10],zy=instruction[9],ny=instruction[8],f=instruction[7],no=instruction[6],out=aluout,out=outM,zr=zr,ng=ng);
-    PC(in=arout,load=jmp,inc=pci,reset=reset,out[0..14]=pc);
+    PC(in=arout,load=jmp,inc=true,reset=reset,out[0..14]=pc);
 
 }
