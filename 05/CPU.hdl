@@ -40,10 +40,10 @@ CHIP CPU {
 
     PARTS:
     //Decode instruction: load values
-    And(a=instruction[5],b=instruction[13],out=toa);    //A
+    And(a=instruction[5],b=instruction[15],out=toa);    //A
     Not(in=instruction[15],out=Ainst);                  //A
     Or(a=Ainst,b=toa,out=loada);                        //A
-    And(a=instruction[4],b=instruction[13],out=loadd);  //D
+    And(a=instruction[4],b=instruction[15],out=loadd);  //D
     And(a=inM[15],b=instruction[3],out=loadm);          //M; this may not actually belong in this group.
 
     //Decode instruction: writeM
@@ -67,12 +67,12 @@ CHIP CPU {
     Not(in=jmp,out=ijmp);
 
     //Set A
-    Mux16(a=aluout,b=instruction,sel=loada,out=m1out);
+    Mux16(a=aluout,b=instruction,sel=Ainst,out=m1out);
     ARegister(in=m1out,load=loada,out=arout,out[0..14]=addressM);
 
     //Set D
-    Mux16(a=arout,b=aluout,sel=loadd,out=m2out);
-    DRegister(in=m2out,load=loadd,out=drout);
+    //Mux16(a=arout,b=aluout,sel=loadd,out=m2out);
+    DRegister(in=aluout,load=loadd,out=drout);
 
     //Main cpu implementation
     Mux16(a=arout,b=inM,sel=instruction[12],out=aorm);
