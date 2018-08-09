@@ -70,8 +70,8 @@ CHIP CPU {
     Mux16(a=aluout,b=arout,sel=loadd,out=m2out);
     DRegister(in=m2out,load=loadd,out=drout);
 
-    Mux16(a=arout,b=inM,sel=instruction[12],out=aorm);
-    ALU(x=aorm,y=drout,zx=inM[11],nx=inM[10],zy=inM[9],ny=inM[8],f=inM[7],no=inM[6],out=aluout,out=outM,zr=zr,ng=ng);
+    Mux16(a=inM,b=arout,sel=instruction[12],out=aorm);
+    ALU(x=drout,y=aorm,zx=inM[11],nx=inM[10],zy=inM[9],ny=inM[8],f=inM[7],no=inM[6],out=aluout,out=outM,zr=zr,ng=ng);
     PC(in=arout,load=jmp,inc=pci,reset=reset,out[0..14]=pc);
 
 }
