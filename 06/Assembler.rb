@@ -1,21 +1,25 @@
-# Use argument as assembly file to process
-asm_file = ARGV[0]
+def initialize_environment
+  # Use argument as assembly file to process
+  asm_file = ARGV[0]
 
-# Extract path for output file
-path = /^.*\./.match(asm_file)
+  # Extract path for output file
+  path = /^.*\./.match(asm_file)
 
-# Debug Line
-puts asm_file
+  # Debug Line
+  puts asm_file
 
-# Setup for input and output
-asm = IO.readlines(asm_file)
-hack = File.open("#{path}hack", "w")
+  # Setup globals
+  @asm = IO.readlines(asm_file)
+  @hack = File.open("#{path}hack", "w")
+  @address = nil
 
-# Strip comments and black lines from instructions
-asm.select! { |line| /\S/ =~ line && /^(\/\/).*/ !~ line}
+  # Strip comments and black lines from instructions
+  @asm.select! { |line| /\S/ =~ line && /^(\/\/).*/ !~ line}
+end
 
 # Sets last three bits for jump condition
-def set_jump_cond(cond)
+def jump_cond(cond)
+  puts cond
   case cond
   when "JGT"
     "001"
@@ -34,19 +38,27 @@ def set_jump_cond(cond)
   end
 end
 
-# Builds instructions
-asm.each { |asm_inst|
-  puts asm_inst
-  puts asm_inst[0]
-  if asm_inst[0] == "@"
-    instruction = asm_inst[1..-1].to_i.to_s(2).rjust(16, "0")
-  elsif /;/ =~ asm_inst
-    instruction[13..14] = set_jump_cond(asm_inst[-3..-1])
-    instruction[]
-  else
-    instruction = asm_inst
-  end
-  hack.puts instruction
-}
+# Set dest bits for jump
 
-hack.close
+# Builds instructions
+def build_instructions
+  @asm.each { |asm_inst|
+    if asm_inst[0] == "@"
+      instruction = asm_inst[1..-1].to_i.to_s(2).rjust(16, "0")
+      @address = instruction[1..15]
+    elsif /;/ =~ asm_inst
+      instruction = "0" * 16
+      puts asm_inst.strip.inspect
+      puts asm_inst.strip[-3..-1]
+      instruction[13..15] = jump_cond(asm_inst.strip[-3..-1])
+    else
+      instruction = asm_inst
+    end
+    @hack.puts instruction
+  }
+
+end
+
+initialize_environment
+build_instructions
+@hack.close
