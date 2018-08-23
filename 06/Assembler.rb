@@ -94,11 +94,11 @@ def build_instructions
     elsif /;/ =~ asm_inst
       instruction = "0" * 16
       instruction[0..3] = "1110"
-      instruction[4..9] = "000000"
+      instruction[4..9] = gen_comp(asm_inst[0])
       instruction[13..15] = gen_jump_cond(asm_inst.strip[-3..-1])
     elsif /=/ =~ asm_inst
       instruction = "0" * 16
-      instruction[0..3] = "1111"
+      instruction[0..3] = /M/.match(asm_inst.split('=')[1]) ? "1111" : "1110"
       instruction[4..9] = gen_comp(/=(.+)/.match(asm_inst.strip)[1])
       instruction[10..12] = gen_dest(/.*?[^=]*/.match(asm_inst.strip)[0])
     else
