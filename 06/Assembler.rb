@@ -6,12 +6,23 @@ def initialize_environment
   path = /^.*\./.match(asm_file)
 
   # Setup globals
-  @asm = IO.readlines(asm_file)
+  @asm = IO.readlines(asm_file).map { |str| str.split("//")[0].strip }
   @hack = File.open("#{path}hack", "w")
   @address = nil
+  @symbol_table = Hash.new()
 
-  # Strip comments and black lines from instructions
+  # Strip comment lines and black lines from instructions
   @asm.select! { |line| /\S/ =~ line && /^(\/\/).*/ !~ line}
+  # Remove comments from end of lines
+end
+
+def populate_predefined_symbols
+  register_aliases = Hash.new()
+  0.upto(15).each do |n|
+    register_aliases["R#{n}"] = ("%016b" % n)
+  end
+  predefined_symbols = { SP: "0000000000000001", LCL: "0000000000000010", ARG: "0000000000000011", THIS: "000000000000100", THAT: "000000000000101", SCREEN: "0100000000000000", KBD: "0110000000000000" }
+  @symbol_table.merge!(predefined_symbols).merge!(register_aliases)
 end
 
 # Sets last three bits for jump condition
@@ -87,10 +98,20 @@ end
 
 # Builds instructions
 def build_instructions
-  @asm.each { |asm_inst|
+  next_ram = 17
+  @asm.each do |asm_inst|
     if asm_inst[0] == "@"
-      instruction = asm_inst[1..-1].to_i.to_s(2).rjust(16, "0")
-#      @address = instruction[1..15]
+      if asm_inst[1] =~ /[0-9]/
+        instruction = asm_inst[1..-1].to_i.to_s(2).rjust(16, "0")
+      elsif @symbol_table.has_key?(asm_inst[1..-1])
+        instruction = @symbol_table[asm_inst[1..-1]]
+      else
+        @symbol_table.store(asm_inst[1..-1], "%016b" % next_ram)
+        next_ram += 1
+        instruction = @symbol_table[asm_inst[1..-1]].to_i.to_s(2).rjust(16, "0")
+      end
+    elsif asm_inst[0] == "("
+      instruction = nil # @symbol_table[asm_inst.delete("()")]
     elsif /;/ =~ asm_inst
       instruction = "0" * 16
       instruction[0..3] = "1110"
@@ -104,10 +125,28 @@ def build_instructions
     else
       instruction = asm_inst
     end
-    @hack.puts instruction
-  }
+    if !instruction.nil? && (instruction.length != 16)
+      puts asm_inst
+      puts instruction
+    end
+    @hack.puts instruction if instruction
+  end
+  puts @symbol_table
+end
+
+# First pass to build symbol table
+def assign_pseudocommands
+  rom_address = 0
+  @asm.each do |asm_line|
+    if asm_line[0] == "("
+      @symbol_table.store(asm_line.delete('()').strip, ("%016b" % rom_address))
+    end
+    rom_address += 1 unless asm_line[0] == "("
+  end
 end
 
 initialize_environment
+populate_predefined_symbols
+assign_pseudocommands
 build_instructions
 @hack.close
